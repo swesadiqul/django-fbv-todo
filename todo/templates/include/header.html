@@ -1,0 +1,59 @@
+<nav class="navbar fixed-top shadow-sm navbar-expand-lg bg-light">
+  <div class="container">
+    <a class="navbar-brand" href="{% url 'home' %}">TODO FBV</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" href="{% url 'home' %}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Contact</a>
+        </li>
+        {% if user.is_authenticated %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Todo
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'todo-create' %}">Create Todo</a></li>
+            <li><a class="dropdown-item" href="{% url 'todo-list' %}">Todo List</a></li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li><a class="dropdown-item" href="#">Comming Soon..</a></li>
+          </ul>
+        </li>
+        {% endif %}
+      </ul>
+      <form class="d-flex me-5 pe-5" role="search" action="/search/">
+        <input class="form-control me-2" type="search" placeholder="Search" name="search" aria-label="Search">
+        <button class="btn btn-outline-success" type="submit">Search</button>
+      </form>
+      {% if user.is_authenticated %}
+        <p class="m-0 d-inline">Welcome, {{ user.username }} !</p>
+        {% endif %}
+      <div class="btn-group ms-lg-2 d-inline order-lg-last order-sm-first">
+        <button type="button" class="btn border-0" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fa-solid fa-circle-user fs-1 text-black-50"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          {% if not user.is_authenticated %}
+          <li><a class="dropdown-item" href="{% url 'signup' %}">Signup</a></li>
+          <li><a class="dropdown-item" href="{% url 'user_login' %}">Login</a></li>
+          {% else %}
+          <li><a class="dropdown-item" href="{% url 'change_password' %}">Change Password</a></li>
+          <li><a class="dropdown-item" href="{% url 'user_logout' %}">Logout</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section id="update-todo" class="update-todo mt-5">
+  <div class="container my-5 py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-5">
+        <h2>Update todo item: {{ todo.title }}</h2>
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-primary px-3">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
