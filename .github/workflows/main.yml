@@ -1,0 +1,59 @@
+name: Deploy Django App to AWS EC2 Without Gunicorn/Nginx
+
+on:
+  push:
+    branches:
+      - master  # Trigger the workflow on a push to the `master` branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Use GitHub's Ubuntu runner environment
+
+    steps:
+    # 1. Checkout the repository
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    # 2. Set up SSH
+    - name: Set up SSH agent
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    # 3. Set up Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.x
+
+    # 4. Install dependencies and run tests
+    - name: Install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        python manage.py test
+
+    # 5. Deploy the app to AWS EC2
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_IP }} << 'EOF'
+          cd /home/ubuntu/django-fbv-todo  # Change to the app's directory
+          
+          # Pull latest changes
+          git pull origin master
+          
+          # Set up the virtual environment and install dependencies
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          
+          # Run migrations
+          python manage.py migrate --noinput
+          
+          # Collect static files
+          python manage.py collectstatic --noinput
+
+          # Start Django's development server (not recommended for production)
+          nohup python manage.py runserver 0.0.0.0:8000 &
+        EOF
