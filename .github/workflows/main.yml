@@ -1,59 +1,40 @@
-name: Deploy Django App to AWS EC2 Without Gunicorn/Nginx
+name: Deploy to AWS EC2
 
 on:
   push:
     branches:
-      - master  # Trigger the workflow on a push to the `master` branch
+      -  master  # Trigger only when code is pushed to the  master branch
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # Use GitHub's Ubuntu runner environment
+    runs-on: ubuntu-latest
 
     steps:
-    # 1. Checkout the repository
-    - name: Checkout Repository
+    # Step 1: Checkout the latest code
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    # 2. Set up SSH
-    - name: Set up SSH agent
-      uses: webfactory/ssh-agent@v0.8.0
-      with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-
-    # 3. Set up Python
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.x
-
-    # 4. Install dependencies and run tests
-    - name: Install dependencies
+    # Step 2: Setup SSH
+    - name: Setup SSH
       run: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-        python manage.py test
+        echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ec2-key.pem
+        chmod 600 ec2-key.pem
+        ssh-keyscan -t rsa ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
-    # 5. Deploy the app to AWS EC2
-    - name: Deploy to EC2
+    # Step 3: Copy project to EC2
+    - name: Copy files to EC2 server
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_IP }} << 'EOF'
-          cd /home/ubuntu/django-fbv-todo  # Change to the app's directory
-          
-          # Pull latest changes
-          git pull origin master
-          
-          # Set up the virtual environment and install dependencies
-          python3 -m venv venv
+        scp -i ec2-key.pem -o StrictHostKeyChecking=no -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }}:/home/${{ secrets.EC2_USER }}
+
+    # Step 4: SSH into the EC2 server and run deployment commands
+    - name: Run deployment commands on EC2
+      run: |
+        ssh -i ec2-key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
+          cd /home/${{ secrets.EC2_USER }}
+          python3 -m venv venv || true
           source venv/bin/activate
           pip install -r requirements.txt
-          
-          # Run migrations
-          python manage.py migrate --noinput
-          
-          # Collect static files
+          python manage.py migrate
           python manage.py collectstatic --noinput
-
-          # Start Django's development server (not recommended for production)
-          nohup python manage.py runserver 0.0.0.0:8000 &
+          systemctl restart gunicorn || true
         EOF
