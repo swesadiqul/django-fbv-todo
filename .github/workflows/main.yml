@@ -17,19 +17,19 @@ jobs:
     # Step 2: Setup SSH
     - name: Setup SSH
       run: |
-        echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ec2-key.pem
-        chmod 600 ec2-key.pem
+        echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > todo.pem
+        chmod 600 todo.pem
         ssh-keyscan -t rsa ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
     # Step 3: Copy project to EC2
     - name: Copy files to EC2 server
       run: |
-        scp -i ec2-key.pem -o StrictHostKeyChecking=no -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }}:/home/${{ secrets.EC2_USER }}
+        scp -i todo.pem -o StrictHostKeyChecking=no -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }}:/home/${{ secrets.EC2_USER }}
 
     # Step 4: SSH into the EC2 server and run deployment commands
     - name: Run deployment commands on EC2
       run: |
-        ssh -i ec2-key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
+        ssh -i todo.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
           cd /home/${{ secrets.EC2_USER }}
           python3 -m venv venv || true
           source venv/bin/activate
